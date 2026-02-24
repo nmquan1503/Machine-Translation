@@ -61,7 +61,6 @@ def main():
         dropout_rate=0.2,
         num_layers=5,
         tie_embeddings=True,
-        device=device
     )
 
     model = CausalLM(config).to(device)
