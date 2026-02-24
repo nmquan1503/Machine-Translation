@@ -89,7 +89,7 @@ class MTDataset(Dataset):
 
             labels = input_ids.copy()
 
-            boundary = min(len(src_ids) + 1, len(labels))
+            boundary = min(len(src_ids), len(labels))
             for i in range(boundary):
                 labels[i] = -100
 
@@ -117,7 +117,6 @@ def collate_fn(batch, pad_id):
 
     padded_inputs = []
     padded_labels = []
-    attention_masks = []
 
     for inp, lab in zip(input_ids, labels):
         pad_length = max_len - inp.size(0)
@@ -130,14 +129,9 @@ def collate_fn(batch, pad_id):
             torch.cat([lab, torch.full((pad_length,), -100, dtype=torch.long)])
         )
 
-        attention_masks.append(
-            torch.cat([torch.ones(inp.size(0)), torch.zeros(pad_length)])
-        )
-
     return {
         "input_ids": torch.stack(padded_inputs),
         "labels": torch.stack(padded_labels),
-        "attention_mask": torch.stack(attention_masks),
     }
 
 

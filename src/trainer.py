@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 
 class Trainer:
     def __init__(
@@ -26,6 +27,8 @@ class Trainer:
 
         self.model.to(self.device)
 
+        self.criterion = nn.CrossEntropyLoss(ignore_index=-100)
+
         self.best_dev_loss = float("inf")
     
     def train(self):
@@ -48,12 +51,8 @@ class Trainer:
         for batch in self.train_dataloader:
             input_ids = batch["input_ids"].to(self.device)
             labels = batch["labels"].to(self.device)
-            attention_mask = batch["attention_mask"].to(self.device)
 
-            logits = self.model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-            )
+            logits = self.model(input_ids)
 
             shift_logits = logits[:, :-1, :].contiguous()
             shift_labels = labels[:, 1:].contiguous()
@@ -85,12 +84,8 @@ class Trainer:
         for batch in self.dev_loader:
             input_ids = batch["input_ids"].to(self.device)
             labels = batch["labels"].to(self.device)
-            attention_mask = batch["attention_mask"].to(self.device)
 
-            logits = self.model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-            )
+            logits = self.model(input_ids)
 
             shift_logits = logits[:, :-1, :].contiguous()
             shift_labels = labels[:, 1:].contiguous()
