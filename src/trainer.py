@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from tqdm import tqdm
 
 class Trainer:
     def __init__(
@@ -48,7 +49,7 @@ class Trainer:
         self.model.train()
         total_loss = 0.0
 
-        for batch in self.train_dataloader:
+        for batch in tqdm(self.train_dataloader):
             input_ids = batch["input_ids"].to(self.device)
             labels = batch["labels"].to(self.device)
 
@@ -74,14 +75,14 @@ class Trainer:
 
             total_loss += loss.item()
 
-        return total_loss / len(self.train_loader)
+        return total_loss / len(self.train_dataloader)
 
     @torch.no_grad()
     def _evaluate(self):
         self.model.eval()
         total_loss = 0.0
 
-        for batch in self.dev_loader:
+        for batch in tqdm(self.dev_loader):
             input_ids = batch["input_ids"].to(self.device)
             labels = batch["labels"].to(self.device)
 
@@ -97,4 +98,4 @@ class Trainer:
 
             total_loss += loss.item()
 
-        return total_loss / len(self.dev_loader)
+        return total_loss / len(self.dev_dataloader)
