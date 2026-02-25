@@ -82,7 +82,7 @@ class Trainer:
         self.model.eval()
         total_loss = 0.0
 
-        for batch in tqdm(self.dev_loader):
+        for batch in tqdm(self.dev_dataloader):
             input_ids = batch["input_ids"].to(self.device)
             labels = batch["labels"].to(self.device)
 
