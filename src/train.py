@@ -64,6 +64,11 @@ def main():
     )
 
     model = CausalLM(config).to(device)
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    print(f"Total params: {total_params:,}")
+    print(f"Trainable params: {trainable_params:,}")
 
     optimizer = optim.AdamW(model.parameters(), lr=lr)
 
