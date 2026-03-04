@@ -15,7 +15,7 @@ def main():
     vocab_size = 32000
     batch_size = 32
     max_length = 256
-    epochs = 10
+    epochs = 1
     lr = 3e-4
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -68,7 +68,6 @@ def main():
         optimizer=optimizer,
         epochs=epochs,
         device=device,
-        epochs=1
     )
 
     trainer.train()
