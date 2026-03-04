@@ -3,7 +3,7 @@ import torch.optim as optim
 
 from src.dataset import Tokenizer, MTDataset, create_dataloader
 from src.trainer import Trainer
-from Mamba import CausalLM, CausalLMConfig
+from ssm_mamba import CausalLM, CausalLMConfig
 
 def main():
 
@@ -12,7 +12,7 @@ def main():
     dev_src = "resources/dev.en.txt"
     dev_tgt = "resources/dev.vi.txt"
 
-    vocab_size = 30000
+    vocab_size = 32000
     batch_size = 32
     max_length = 256
     epochs = 10
@@ -52,18 +52,7 @@ def main():
         shuffle=False,
     )
 
-    config = CausalLMConfig(
-        vocab_size=vocab_size,
-        model_dim=512,
-        state_dim=16,
-        conv_kernel=4,
-        expansion_factor=2,
-        dropout_rate=0.2,
-        num_layers=5,
-        tie_embeddings=True,
-    )
-
-    model = CausalLM(config).to(device)
+    model = CausalLM().to(device)
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -79,6 +68,7 @@ def main():
         optimizer=optimizer,
         epochs=epochs,
         device=device,
+        epochs=1
     )
 
     trainer.train()

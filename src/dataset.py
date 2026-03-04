@@ -23,9 +23,9 @@ def train_tokenizer(paths, vocab_size=16000):
         model_type="unigram",
         character_coverage=1.0,
         pad_id=0,
-        unk_id=1,
-        bos_id=2,
-        eos_id=3,
+        unk_id=3,
+        bos_id=1,
+        eos_id=2,
     )
 
 class Tokenizer:
