@@ -1,5 +1,6 @@
 import torch
 import torch.optim as optim
+from tqdm import tqdm
 
 from src.dataset import Tokenizer, MTDataset, create_dataloader
 from src.trainer import Trainer
@@ -15,7 +16,7 @@ def main():
     vocab_size = 32000
     batch_size = 32
     max_length = 256
-    epochs = 1
+    epochs = 5
     lr = 3e-4
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -72,6 +73,27 @@ def main():
 
     trainer.train()
 
+    model.eval()
 
+    output_path = "dev_generate.txt"
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        with torch.no_grad():
+            for batch in tqdm(dev_loader, desc="Generating"):
+
+                input_ids = batch["input_ids"].to(device)
+
+                output_ids = model.generate(
+                    input_ids,
+                    max_new_tokens=100
+                )
+
+                output_ids = output_ids.cpu()
+
+                for seq in output_ids:
+                    text = tokenizer.decode(seq.tolist())
+                    f.write(text + "\n")
+
+    print(f"Saved generation to {output_path}")
 if __name__ == "__main__":
     main()
