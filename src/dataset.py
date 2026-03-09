@@ -108,6 +108,76 @@ class MTDataset(Dataset):
             "labels": torch.tensor(sample["labels"], dtype=torch.long),
         }
 
+class MTSeq2SeqDataset(Dataset):
+    def __init__(
+        self,
+        src_path,
+        tgt_path,
+        src_tokenizer,
+        tgt_tokenizer,
+        max_length=256
+    ):
+        with open(src_path, "r", encoding="utf-8") as f:
+            src_lines = f.readlines()
+
+        with open(tgt_path, "r", encoding="utf-8") as f:
+            tgt_lines = f.readlines()
+
+        assert len(src_lines) == len(tgt_lines)
+
+        self.src_tokenizer = src_tokenizer
+        self.tgt_tokenizer = tgt_tokenizer
+
+        # dùng chung pad
+        self.pad_id = src_tokenizer.pad_id
+
+        self.bos_id = tgt_tokenizer.bos_id
+        self.eos_id = tgt_tokenizer.eos_id
+
+        self.max_length = max_length
+        self.samples = []
+
+        for src, tgt in zip(src_lines, tgt_lines):
+
+            src = src.strip()
+            tgt = tgt.strip()
+
+            src_ids = src_tokenizer.encode(
+                src,
+                add_bos=False,
+                add_eos=False
+            )
+
+            tgt_ids = tgt_tokenizer.encode(
+                tgt,
+                add_bos=False,
+                add_eos=True
+            )
+
+            decoder_input_ids = [self.bos_id] + tgt_ids[:-1]
+
+            src_ids = src_ids[:max_length]
+            decoder_input_ids = decoder_input_ids[:max_length]
+            tgt_ids = tgt_ids[:max_length]
+
+            self.samples.append({
+                "input_ids": src_ids,
+                "decoder_input_ids": decoder_input_ids,
+                "labels": tgt_ids
+            })
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+
+        sample = self.samples[idx]
+
+        return {
+            "input_ids": torch.tensor(sample["input_ids"], dtype=torch.long),
+            "decoder_input_ids": torch.tensor(sample["decoder_input_ids"], dtype=torch.long),
+            "labels": torch.tensor(sample["labels"], dtype=torch.long),
+        }
 
 def collate_fn(batch, pad_id):
     input_ids = [item["input_ids"] for item in batch]
@@ -134,6 +204,41 @@ def collate_fn(batch, pad_id):
         "labels": torch.stack(padded_labels),
     }
 
+def seq2seq_collate_fn(batch, pad_id):
+
+    input_ids = [x["input_ids"] for x in batch]
+    decoder_input_ids = [x["decoder_input_ids"] for x in batch]
+    labels = [x["labels"] for x in batch]
+
+    max_src_len = max(x.size(0) for x in input_ids)
+    max_tgt_len = max(x.size(0) for x in decoder_input_ids)
+
+    padded_src = []
+    padded_dec = []
+    padded_labels = []
+
+    for src, dec, lab in zip(input_ids, decoder_input_ids, labels):
+
+        src_pad = max_src_len - src.size(0)
+        tgt_pad = max_tgt_len - dec.size(0)
+
+        padded_src.append(
+            torch.cat([src, torch.full((src_pad,), pad_id, dtype=torch.long)])
+        )
+
+        padded_dec.append(
+            torch.cat([dec, torch.full((tgt_pad,), pad_id, dtype=torch.long)])
+        )
+
+        padded_labels.append(
+            torch.cat([lab, torch.full((tgt_pad,), -100, dtype=torch.long)])
+        )
+
+    return {
+        "input_ids": torch.stack(padded_src),
+        "decoder_input_ids": torch.stack(padded_dec),
+        "labels": torch.stack(padded_labels)
+    }
 
 def create_dataloader(dataset, batch_size=32, shuffle=True):
     return DataLoader(
@@ -141,4 +246,12 @@ def create_dataloader(dataset, batch_size=32, shuffle=True):
         batch_size=batch_size,
         shuffle=shuffle,
         collate_fn=lambda batch: collate_fn(batch, dataset.pad_id),
+    )
+
+def create_seq2seq_dataloader(dataset, batch_size=32, shuffle=True):
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        collate_fn=lambda batch: seq2seq_collate_fn(batch, dataset.pad_id),
     )
